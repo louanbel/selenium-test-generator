@@ -1,0 +1,93 @@
+grammar org.xtext.example.SeleniumScript with org.eclipse.xtext.common.Terminals
+
+generate seleniumScript "http://www.xtext.org/example/SeleniumScript"
+
+Model:
+    tests+=Test*;
+    
+Test:
+    'test' name=ID':'
+        (
+            actions+=Action
+        )+
+;
+
+
+
+Action:
+    GotoAction | ClickAction | AssertAction | WriteAction | {Action} UncheckAllAction | SelectAction | VariableAction
+;
+
+
+GotoAction:
+    'goto' url=URL
+;
+
+ClickAction:
+    'click' selector=SelectorWith
+;
+
+AssertAction:
+    'assert' selector=SelectorHas
+;
+
+WriteAction:
+    'write' value=STRING 'in' selector=SelectorWith
+;
+
+
+UncheckAllAction:
+    'uncheck_all'
+;
+
+SelectAction:
+    'select' (optionSelector?=WithAttribute value=STRING and+=(And)*)? 'from' selector=SelectorWith
+;
+
+
+SelectorWith:
+    base_selector=STRING (w=With and+=(And)*)?
+;
+
+
+With:
+    withAttribute=WithAttribute value=Value
+;
+
+
+WithAttribute:
+    'with' attribute=ID
+;
+
+
+And:
+    andAttribute=AndAttribute value=Value
+;
+
+AndAttribute:
+    'and' attribute=ID
+;
+
+
+SelectorHas:
+    base_selector=STRING 'has' attribute=ID value=Value
+;
+
+
+VariableAction:
+    'let' name=ID assignation=VariableAssignation
+;
+
+VariableAssignation:
+    'as' attribute=ID 'from' selector=SelectorWith
+;
+
+
+Value:
+    value=[VariableAction] | STRING
+;
+
+
+terminal URL:
+    'http' ('s'?) '://' ('www.'?) ('a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '.')+ ('/' ('a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '_' | '.' | '~' | '?' | '&' | '=' | '%')*)?
+    ;
