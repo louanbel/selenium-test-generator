@@ -1,0 +1,5 @@
+**/src-gen/
+.DS_STORE
+**/generated/
+.classpath
+**/xtend-gen/

@@ -5,6 +5,7 @@ package org.xtext.example.generator;
 
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+import java.util.Objects;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -17,7 +18,7 @@ import org.eclipse.xtext.xbase.lib.Extension;
 import org.eclipse.xtext.xbase.lib.IteratorExtensions;
 import org.xtext.example.seleniumScript.Action;
 import org.xtext.example.seleniumScript.And;
-import org.xtext.example.seleniumScript.AssertAction;
+import org.xtext.example.seleniumScript.CheckAction;
 import org.xtext.example.seleniumScript.ClickAction;
 import org.xtext.example.seleniumScript.GotoAction;
 import org.xtext.example.seleniumScript.SelectorHas;
@@ -25,7 +26,7 @@ import org.xtext.example.seleniumScript.SelectorWith;
 import org.xtext.example.seleniumScript.Test;
 import org.xtext.example.seleniumScript.Value;
 import org.xtext.example.seleniumScript.VariableAction;
-import org.xtext.example.seleniumScript.VariableAssignation;
+import org.xtext.example.seleniumScript.With;
 
 @SuppressWarnings("all")
 public class SeleniumScriptGenerator extends AbstractGenerator {
@@ -161,8 +162,8 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
         _builder.append(_compile);
         _builder.newLineIfNotEmpty();
       } else {
-        if ((action instanceof AssertAction)) {
-          CharSequence _compile_1 = this.compile(((AssertAction) action));
+        if ((action instanceof CheckAction)) {
+          CharSequence _compile_1 = this.compile(((CheckAction) action));
           _builder.append(_compile_1);
           _builder.newLineIfNotEmpty();
         } else {
@@ -171,8 +172,11 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
             _builder.append(_compile_2);
             _builder.newLineIfNotEmpty();
           } else {
-            _builder.append("// Unsupported action type");
-            _builder.newLine();
+            if ((action instanceof VariableAction)) {
+              CharSequence _compile_3 = this.compile(((VariableAction) action));
+              _builder.append(_compile_3);
+              _builder.newLineIfNotEmpty();
+            }
           }
         }
       }
@@ -182,17 +186,35 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 
   private CharSequence compile(final ClickAction action) {
     StringConcatenation _builder = new StringConcatenation();
-    _builder.append("WebElement element = driver.findElement(By.cssSelector(\"");
-    CharSequence _compile = this.compile(action.getSelector());
-    _builder.append(_compile);
-    _builder.append("\"));");
+    _builder.append("WebElement element = driver.findElement(");
+    {
+      if (((!Objects.equals(action.getSelector().getW(), null)) && Objects.equals(action.getSelector().getW().getWithAttribute().getAttribute(), "text"))) {
+        _builder.newLineIfNotEmpty();
+        _builder.append("By.xpath(\"//");
+        String _base_selector = action.getSelector().getBase_selector();
+        _builder.append(_base_selector);
+        _builder.append("[text()=\'");
+        String _trim = this.compile(action.getSelector().getW().getValue()).toString().trim();
+        _builder.append(_trim);
+        _builder.append("\']\")");
+        _builder.newLineIfNotEmpty();
+      } else {
+        _builder.append("By.cssSelector(\"");
+        CharSequence _compile = this.compile(action.getSelector());
+        _builder.append(_compile);
+        _builder.append("\")");
+        _builder.newLineIfNotEmpty();
+        _builder.append("\t    ");
+      }
+    }
+    _builder.append(");");
     _builder.newLineIfNotEmpty();
     _builder.append("element.click();");
     _builder.newLine();
     return _builder;
   }
 
-  private CharSequence compile(final AssertAction action) {
+  private CharSequence compile(final CheckAction action) {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("WebElement element = driver.findElement(By.cssSelector(\"");
     CharSequence _compile = this.compile(action.getSelector());
@@ -216,17 +238,43 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 
   private CharSequence compile(final SelectorWith selector) {
     StringConcatenation _builder = new StringConcatenation();
-    String _base_selector = selector.getBase_selector();
-    _builder.append(_base_selector);
-    _builder.append("[");
-    String _attribute = selector.getW().getWithAttribute().getAttribute();
-    _builder.append(_attribute);
-    _builder.append("=\\\"");
-    Value _value = selector.getW().getValue();
-    _builder.append(_value);
-    _builder.append("\\\"]");
-    CharSequence _compile = this.compile(selector.getAnd());
-    _builder.append(_compile);
+    {
+      if (((!Objects.equals(selector.getW(), null)) && Objects.equals(selector.getW().getWithAttribute().getAttribute(), "text"))) {
+        _builder.append("By.xpath(\"//");
+        String _base_selector = selector.getBase_selector();
+        _builder.append(_base_selector);
+        _builder.append("[text()=\'");
+        String _trim = this.compile(selector.getW().getValue()).toString().trim();
+        _builder.append(_trim);
+        _builder.append("\']\")");
+        CharSequence _compile = this.compile(selector.getAnd());
+        _builder.append(_compile);
+        _builder.newLineIfNotEmpty();
+      } else {
+        With _w = selector.getW();
+        boolean _notEquals = (!Objects.equals(_w, null));
+        if (_notEquals) {
+          String _base_selector_1 = selector.getBase_selector();
+          _builder.append(_base_selector_1);
+          _builder.append("[");
+          String _attribute = selector.getW().getWithAttribute().getAttribute();
+          _builder.append(_attribute);
+          _builder.append("=\\\"");
+          String _trim_1 = this.compile(selector.getW().getValue()).toString().trim();
+          _builder.append(_trim_1);
+          _builder.append("\\\"]");
+          CharSequence _compile_1 = this.compile(selector.getAnd());
+          _builder.append(_compile_1);
+          _builder.newLineIfNotEmpty();
+        } else {
+          String _base_selector_2 = selector.getBase_selector();
+          _builder.append(_base_selector_2);
+          CharSequence _compile_2 = this.compile(selector.getAnd());
+          _builder.append(_compile_2);
+          _builder.newLineIfNotEmpty();
+        }
+      }
+    }
     return _builder;
   }
 
@@ -237,7 +285,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
         _builder.append("[");
         String _attribute = and.getAndAttribute().getAttribute();
         _builder.append(_attribute);
-        _builder.append("=\\\"");
+        _builder.append("=\\\"_");
         CharSequence _compile = this.compile(and.getValue());
         _builder.append(_compile);
         _builder.append("\\\"]");
@@ -247,25 +295,63 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
   }
 
   private CharSequence compile(final Value value) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nIncompatible conditional operand types Value and String");
+    StringConcatenation _builder = new StringConcatenation();
+    {
+      String _valueString = value.getValueString();
+      boolean _notEquals = (!Objects.equals(_valueString, null));
+      if (_notEquals) {
+        String _valueString_1 = value.getValueString();
+        _builder.append(_valueString_1);
+        _builder.newLineIfNotEmpty();
+      } else {
+        VariableAction _valueVariable = value.getValueVariable();
+        boolean _notEquals_1 = (!Objects.equals(_valueVariable, null));
+        if (_notEquals_1) {
+          _builder.append("\" + _");
+          String _name = value.getValueVariable().getName();
+          _builder.append(_name);
+          _builder.append(" + \"");
+          _builder.newLineIfNotEmpty();
+          _builder.append("\t    ");
+        }
+      }
+    }
+    return _builder;
   }
 
   private CharSequence compile(final VariableAction action) {
     StringConcatenation _builder = new StringConcatenation();
-    _builder.append("\t");
-    _builder.newLine();
-    return _builder;
-  }
-
-  private CharSequence compile(final VariableAssignation assignation) {
-    StringConcatenation _builder = new StringConcatenation();
-    CharSequence _compile = this.compile(assignation.getSelector());
-    _builder.append(_compile);
-    _builder.append("[");
-    String _attribute = assignation.getAttribute();
-    _builder.append(_attribute);
-    _builder.append("]");
+    _builder.append("WebElement _");
+    String _name = action.getName();
+    _builder.append(_name);
+    _builder.append(" = driver.findElement(By.cssSelector(\"");
+    String _trim = this.compile(action.getAssignation().getSelector()).toString().trim();
+    _builder.append(_trim);
+    _builder.append("\"));");
+    _builder.newLineIfNotEmpty();
+    _builder.append("_");
+    String _name_1 = action.getName();
+    _builder.append(_name_1);
+    _builder.append(" = ");
+    {
+      String _attribute = action.getAssignation().getAttribute();
+      boolean _equals = Objects.equals(_attribute, "text");
+      if (_equals) {
+        _builder.append(" _");
+        String _name_2 = action.getName();
+        _builder.append(_name_2);
+        _builder.append(".getText(); ");
+      } else {
+        _builder.append(" _");
+        String _name_3 = action.getName();
+        _builder.append(_name_3);
+        _builder.append(".getAttribute(");
+        String _attribute_1 = action.getAssignation().getAttribute();
+        _builder.append(_attribute_1);
+        _builder.append("); ");
+      }
+    }
+    _builder.newLineIfNotEmpty();
     return _builder;
   }
 

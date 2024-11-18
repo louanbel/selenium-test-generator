@@ -21,7 +21,6 @@ import org.eclipse.emf.common.util.EList
 import org.xtext.example.seleniumScript.VariableAction
 import org.xtext.example.seleniumScript.Value
 import org.xtext.example.seleniumScript.VariableAssignation
-import org.xtext.example.seleniumScript.AssertAction
 
 public class SeleniumScriptGenerator extends AbstractGenerator {
 
@@ -81,21 +80,25 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	private def compile(Action action) '''
 		«IF action instanceof ClickAction»
 			«(action as ClickAction).compile()»
-		«ELSEIF action instanceof AssertAction»
-			«(action as AssertAction).compile()»
+		«ELSEIF action instanceof CheckAction»
+			«(action as CheckAction).compile()»
 		«ELSEIF action instanceof GotoAction»
 			«(action as GotoAction).compile()»
-		«ELSE»
-			// Unsupported action type
+		«ELSEIF action instanceof VariableAction»
+			«(action as VariableAction).compile()»
 		«ENDIF»
 	'''
 
 	private def compile(ClickAction action) '''
-		WebElement element = driver.findElement(By.cssSelector("«action.getSelector().compile()»"));
-		element.click();
+	    WebElement element = driver.findElement(«IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
+	        By.xpath("//«action.selector.base_selector»[text()='«action.selector.w.value.compile().toString().trim()»']")
+	    «ELSE»
+	        By.cssSelector("«action.selector.compile()»")
+	    «ENDIF»);
+	    element.click();
 	'''
 
-	private def compile(AssertAction action) '''
+	private def compile(CheckAction action) '''
 		WebElement element = driver.findElement(By.cssSelector("«action.getSelector().compile()»"));
 		element.isDisplayed();
 	'''
@@ -105,24 +108,29 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	'''
 	
 	private def compile(SelectorWith selector) '''
-		«selector.getBase_selector()»[«selector.getW().getWithAttribute().getAttribute()»=\"«selector.getW().getValue()»\"]«selector.getAnd().compile()»'''
+	    «IF selector.w != null && selector.w.withAttribute.attribute == "text"»
+	        By.xpath("//«selector.base_selector»[text()='«selector.w.value.compile().toString().trim()»']")«selector.and.compile()»
+	    «ELSEIF selector.w != null»
+	        «selector.base_selector»[«selector.w.withAttribute.attribute»=\"«selector.w.value.compile().toString().trim()»\"]«selector.and.compile()»
+	    «ELSE»
+	        «selector.base_selector»«selector.and.compile()»
+	    «ENDIF»
+	'''
 	
-	private def compile(EList<And> lAnd) '''«FOR and: lAnd»[«and.getAndAttribute().getAttribute()»=\"«and.getValue().compile()»\"]«ENDFOR»'''
+	private def compile(EList<And> lAnd) '''«FOR and: lAnd»[«and.getAndAttribute().getAttribute()»=\"_«and.getValue().compile()»\"]«ENDFOR»'''
 	
 	private def compile(Value value) '''
-		«IF value instanceof String»
-			«(value as String)»
-		«ELSEIF value instanceof VariableAction»
-			«(value as VariableAction).compile()»	
-		«ENDIF»
-		
-	'''
+	    «IF value.valueString != null»
+	        «value.valueString»
+	    «ELSEIF value.valueVariable != null»
+	        " + _«value.valueVariable.getName()» + "
+	    «ENDIF»'''
 	
 	private def compile(VariableAction action) '''
-	
+		WebElement _«action.getName()» = driver.findElement(By.cssSelector("«action.getAssignation().getSelector().compile().toString().trim()»"));
+		_«action.getName()» = «IF action.getAssignation().getAttribute() == "text"» _«action.getName()».getText(); «ELSE» _«action.getName()».getAttribute(«action.getAssignation().getAttribute()»); «ENDIF»
 	'''
 
-	private def compile(VariableAssignation assignation) '''«assignation.getSelector().compile()»[«assignation.getAttribute()»]'''
 	
 	private def compile(SelectorHas selector) '''«selector.getBase_selector()»[«selector.getAttribute()»=\"«selector.getValue()»\"]'''
 }
