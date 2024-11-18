@@ -20,7 +20,7 @@ Action:
 
 
 GotoAction:
-	'goto' url=URL
+	'goto' url=STRING
 ;
 
 ClickAction:
@@ -32,7 +32,7 @@ CheckAction:
 ;
 
 WriteAction:
-	'write' value=STRING 'in' selector=SelectorWith
+	'write' value=Value 'in' selector=SelectorWith
 ;
 
 
@@ -41,7 +41,7 @@ UncheckAllAction:
 ;
 
 SelectAction:
-	'select' (optionSelector?=WithAttribute value=STRING and+=(And)*)? 'from' selector=SelectorWith
+	'select' optionSelector=With (and+=And)* 'from' selector=SelectorWith
 ;
 
 
@@ -85,9 +85,4 @@ VariableAssignation:
 
 Value:
 	valueString=STRING | valueVariable=[VariableAction]
-;
-
-
-terminal URL:
-	'http' ('s'?) '://' ('www.'?) ('a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '.')+ ('/' ('a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '_' | '.' | '~' | '?' | '&' | '=' | '%')*)?
 ;

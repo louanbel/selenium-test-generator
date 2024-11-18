@@ -93,14 +93,18 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	    WebElement element = driver.findElement(«IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
 	        By.xpath("//«action.selector.base_selector»[text()='«action.selector.w.value.compile().toString().trim()»']")
 	    «ELSE»
-	        By.cssSelector("«action.selector.compile()»")
+	        By.cssSelector("«action.selector.compile().toString().trim()»")
 	    «ENDIF»);
 	    element.click();
 	'''
 
 	private def compile(CheckAction action) '''
-		WebElement element = driver.findElement(By.cssSelector("«action.getSelector().compile()»"));
-		element.isDisplayed();
+	    WebElement element = driver.findElement(«IF action.selector.getAttribute == "text"»
+	        By.xpath("//«action.selector.base_selector»[text()='«action.selector.value.compile().toString().trim()»']")
+	    «ELSE»
+	        By.cssSelector("«action.selector.compile().toString().trim()»")
+	    «ENDIF»);
+	    element.isDisplayed();
 	'''
 
 	private def compile(GotoAction action) '''

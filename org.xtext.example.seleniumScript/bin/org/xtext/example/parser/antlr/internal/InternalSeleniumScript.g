@@ -271,9 +271,9 @@ ruleGotoAction returns [EObject current=null]
 		}
 		(
 			(
-				lv_url_1_0=RULE_URL
+				lv_url_1_0=RULE_STRING
 				{
-					newLeafNode(lv_url_1_0, grammarAccess.getGotoActionAccess().getUrlURLTerminalRuleCall_1_0());
+					newLeafNode(lv_url_1_0, grammarAccess.getGotoActionAccess().getUrlSTRINGTerminalRuleCall_1_0());
 				}
 				{
 					if ($current==null) {
@@ -283,7 +283,7 @@ ruleGotoAction returns [EObject current=null]
 						$current,
 						"url",
 						lv_url_1_0,
-						"org.xtext.example.SeleniumScript.URL");
+						"org.eclipse.xtext.common.Terminals.STRING");
 				}
 			)
 		)
@@ -396,19 +396,20 @@ ruleWriteAction returns [EObject current=null]
 		}
 		(
 			(
-				lv_value_1_0=RULE_STRING
 				{
-					newLeafNode(lv_value_1_0, grammarAccess.getWriteActionAccess().getValueSTRINGTerminalRuleCall_1_0());
+					newCompositeNode(grammarAccess.getWriteActionAccess().getValueValueParserRuleCall_1_0());
 				}
+				lv_value_1_0=ruleValue
 				{
 					if ($current==null) {
-						$current = createModelElement(grammarAccess.getWriteActionRule());
+						$current = createModelElementForParent(grammarAccess.getWriteActionRule());
 					}
-					setWithLastConsumed(
+					set(
 						$current,
 						"value",
 						lv_value_1_0,
-						"org.eclipse.xtext.common.Terminals.STRING");
+						"org.xtext.example.SeleniumScript.Value");
+					afterParserOrEnumRuleCall();
 				}
 			)
 		)
@@ -482,72 +483,52 @@ ruleSelectAction returns [EObject current=null]
 		}
 		(
 			(
-				(
-					{
-						newCompositeNode(grammarAccess.getSelectActionAccess().getOptionSelectorWithAttributeParserRuleCall_1_0_0());
+				{
+					newCompositeNode(grammarAccess.getSelectActionAccess().getOptionSelectorWithParserRuleCall_1_0());
+				}
+				lv_optionSelector_1_0=ruleWith
+				{
+					if ($current==null) {
+						$current = createModelElementForParent(grammarAccess.getSelectActionRule());
 					}
-					lv_optionSelector_1_0=ruleWithAttribute
-					{
-						if ($current==null) {
-							$current = createModelElementForParent(grammarAccess.getSelectActionRule());
-						}
-						set(
-							$current,
-							"optionSelector",
-							lv_optionSelector_1_0 != null,
-							"org.xtext.example.SeleniumScript.WithAttribute");
-						afterParserOrEnumRuleCall();
-					}
-				)
+					set(
+						$current,
+						"optionSelector",
+						lv_optionSelector_1_0,
+						"org.xtext.example.SeleniumScript.With");
+					afterParserOrEnumRuleCall();
+				}
 			)
+		)
+		(
 			(
-				(
-					lv_value_2_0=RULE_STRING
-					{
-						newLeafNode(lv_value_2_0, grammarAccess.getSelectActionAccess().getValueSTRINGTerminalRuleCall_1_1_0());
+				{
+					newCompositeNode(grammarAccess.getSelectActionAccess().getAndAndParserRuleCall_2_0());
+				}
+				lv_and_2_0=ruleAnd
+				{
+					if ($current==null) {
+						$current = createModelElementForParent(grammarAccess.getSelectActionRule());
 					}
-					{
-						if ($current==null) {
-							$current = createModelElement(grammarAccess.getSelectActionRule());
-						}
-						setWithLastConsumed(
-							$current,
-							"value",
-							lv_value_2_0,
-							"org.eclipse.xtext.common.Terminals.STRING");
-					}
-				)
+					add(
+						$current,
+						"and",
+						lv_and_2_0,
+						"org.xtext.example.SeleniumScript.And");
+					afterParserOrEnumRuleCall();
+				}
 			)
-			(
-				(
-					{
-						newCompositeNode(grammarAccess.getSelectActionAccess().getAndAndParserRuleCall_1_2_0());
-					}
-					lv_and_3_0=ruleAnd
-					{
-						if ($current==null) {
-							$current = createModelElementForParent(grammarAccess.getSelectActionRule());
-						}
-						add(
-							$current,
-							"and",
-							lv_and_3_0,
-							"org.xtext.example.SeleniumScript.And");
-						afterParserOrEnumRuleCall();
-					}
-				)
-			)*
-		)?
-		otherlv_4='from'
+		)*
+		otherlv_3='from'
 		{
-			newLeafNode(otherlv_4, grammarAccess.getSelectActionAccess().getFromKeyword_2());
+			newLeafNode(otherlv_3, grammarAccess.getSelectActionAccess().getFromKeyword_3());
 		}
 		(
 			(
 				{
-					newCompositeNode(grammarAccess.getSelectActionAccess().getSelectorSelectorWithParserRuleCall_3_0());
+					newCompositeNode(grammarAccess.getSelectActionAccess().getSelectorSelectorWithParserRuleCall_4_0());
 				}
-				lv_selector_5_0=ruleSelectorWith
+				lv_selector_4_0=ruleSelectorWith
 				{
 					if ($current==null) {
 						$current = createModelElementForParent(grammarAccess.getSelectActionRule());
@@ -555,7 +536,7 @@ ruleSelectAction returns [EObject current=null]
 					set(
 						$current,
 						"selector",
-						lv_selector_5_0,
+						lv_selector_4_0,
 						"org.xtext.example.SeleniumScript.SelectorWith");
 					afterParserOrEnumRuleCall();
 				}
@@ -1117,8 +1098,6 @@ ruleValue returns [EObject current=null]
 		)
 	)
 ;
-
-RULE_URL : 'http' 's'? '://' 'www.'? ('a'..'z'|'A'..'Z'|'0'..'9'|'-'|'.')+ ('/' ('a'..'z'|'A'..'Z'|'0'..'9'|'-'|'_'|'.'|'~'|'?'|'&'|'='|'%')*)?;
 
 RULE_ID : '^'? ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
 

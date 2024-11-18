@@ -200,8 +200,8 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
         _builder.newLineIfNotEmpty();
       } else {
         _builder.append("By.cssSelector(\"");
-        CharSequence _compile = this.compile(action.getSelector());
-        _builder.append(_compile);
+        String _trim_1 = this.compile(action.getSelector()).toString().trim();
+        _builder.append(_trim_1);
         _builder.append("\")");
         _builder.newLineIfNotEmpty();
         _builder.append("\t    ");
@@ -216,10 +216,30 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 
   private CharSequence compile(final CheckAction action) {
     StringConcatenation _builder = new StringConcatenation();
-    _builder.append("WebElement element = driver.findElement(By.cssSelector(\"");
-    CharSequence _compile = this.compile(action.getSelector());
-    _builder.append(_compile);
-    _builder.append("\"));");
+    _builder.append("WebElement element = driver.findElement(");
+    {
+      String _attribute = action.getSelector().getAttribute();
+      boolean _equals = Objects.equals(_attribute, "text");
+      if (_equals) {
+        _builder.newLineIfNotEmpty();
+        _builder.append("By.xpath(\"//");
+        String _base_selector = action.getSelector().getBase_selector();
+        _builder.append(_base_selector);
+        _builder.append("[text()=\'");
+        String _trim = this.compile(action.getSelector().getValue()).toString().trim();
+        _builder.append(_trim);
+        _builder.append("\']\")");
+        _builder.newLineIfNotEmpty();
+      } else {
+        _builder.append("By.cssSelector(\"");
+        String _trim_1 = this.compile(action.getSelector()).toString().trim();
+        _builder.append(_trim_1);
+        _builder.append("\")");
+        _builder.newLineIfNotEmpty();
+        _builder.append("\t    ");
+      }
+    }
+    _builder.append(");");
     _builder.newLineIfNotEmpty();
     _builder.append("element.isDisplayed();");
     _builder.newLine();
