@@ -46,7 +46,7 @@ SelectAction:
 
 
 SelectorWith:
-	base_selector=STRING (w=With and+=(And)*)?
+	(first?='first')? (last?='last')? base_selector=STRING (w=With and+=(And)*)?
 ;
 
 
@@ -91,6 +91,3 @@ Value:
 terminal URL:
 	'http' ('s'?) '://' ('www.'?) ('a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '.')+ ('/' ('a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '_' | '.' | '~' | '?' | '&' | '=' | '%')*)?
 ;
-
-
-
