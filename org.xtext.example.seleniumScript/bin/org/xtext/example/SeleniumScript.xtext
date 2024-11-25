@@ -46,7 +46,7 @@ SelectAction:
 
 
 SelectorWith:
-	(first?='first')? (last?='last')? base_selector=STRING (w=With and+=(And)*)?
+	(first?='first')? (last?='last')? base_selector=BaseSelector (w=With and+=(And)*)?
 ;
 
 
@@ -70,7 +70,11 @@ AndAttribute:
 
 
 SelectorHas:
-	base_selector=STRING 'has' attribute=ID value=Value
+	base_selector=BaseSelector 'has' attribute=ID value=Value
+;
+
+BaseSelector:
+	name=STRING
 ;
 
 

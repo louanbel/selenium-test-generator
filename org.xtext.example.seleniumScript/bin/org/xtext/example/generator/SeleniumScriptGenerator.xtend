@@ -20,27 +20,37 @@ import org.xtext.example.seleniumScript.And
 import org.eclipse.emf.common.util.EList
 import org.xtext.example.seleniumScript.VariableAction
 import org.xtext.example.seleniumScript.Value
-import org.xtext.example.seleniumScript.VariableAssignation
+import org.xtext.example.seleniumScript.BaseSelector
+import org.xtext.example.seleniumScript.WriteAction
 
 public class SeleniumScriptGenerator extends AbstractGenerator {
 
 	@Inject extension IQualifiedNameProvider
-
+	
+	private int elementCounter = 0;
+	
+	private def resetCounter() {
+		elementCounter = 0;
+	}
+	
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		for (e : resource.allContents.toIterable.filter(Test)) {
 			fsa.generateFile("Tests/Test" + e.fullyQualifiedName.toString("/") + ".java", e.compile)
+			resetCounter();
 		}
 
 		fsa.generateFile("Tests/AllTestsRunner.java", compileMainClass(resource.allContents.toIterable.filter(Test)))
 	}
 
+	
 	private def compile(Test test) '''
-		package Tests;
+		package com.cafonctionne.mavenproject;
 
 		import org.openqa.selenium.By;
 		import org.openqa.selenium.WebDriver;
 		import org.openqa.selenium.WebElement;
 		import org.openqa.selenium.chrome.ChromeDriver;
+		import org.openqa.selenium.JavascriptExecutor;
 		
 		public class Test«test.getName()» {
 		    private WebDriver driver;
@@ -51,6 +61,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		
 		    public void runTest() {
 			    try {
+			    	JavascriptExecutor js = (JavascriptExecutor) driver;
 			        «FOR action : test.actions»
 			        	«action.compile()»
 			        «ENDFOR»
@@ -62,7 +73,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	'''
 
 	private def compileMainClass(Iterable<Test> tests) '''
-		package Tests;
+		package com.cafonctionne.mavenproject;
 
 		public class AllTestsRunner {
 		
@@ -86,42 +97,54 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 			«(action as GotoAction).compile()»
 		«ELSEIF action instanceof VariableAction»
 			«(action as VariableAction).compile()»
-		«ENDIF»
-	'''
+		«ELSEIF action instanceof WriteAction»
+			«(action as WriteAction).compile()»
+		«ENDIF»'''
 
+	private def compile(WriteAction writeAction) '''
+		WebElement element«elementCounter++» = driver.findElement(«writeAction.selector.compile().toString().trim()»);
+		element«elementCounter-1».sendKeys("«writeAction.value.compile().toString().trim()»");
+	'''
 	private def compile(ClickAction action) '''
-	    WebElement element = driver.findElement(«IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
-	        By.xpath("//«action.selector.base_selector»[text()='«action.selector.w.value.compile().toString().trim()»']")
+	    WebElement element«elementCounter++» = driver.findElement(
+	    «IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
+	        By.xpath("//«action.selector.base_selector.compile()»[contains(text(), '«action.selector.w.value.compile().toString().trim()»')]")
 	    «ELSE»
-	        By.cssSelector("«action.selector.compile().toString().trim()»")
+	        «action.selector.compile().toString().trim()»
 	    «ENDIF»);
-	    element.click();
+	    js.executeScript("arguments[0].click();", element«elementCounter-1»);
 	'''
 
 	private def compile(CheckAction action) '''
-	    WebElement element = driver.findElement(«IF action.selector.getAttribute == "text"»
-	        By.xpath("//«action.selector.base_selector»[text()='«action.selector.value.compile().toString().trim()»']")
+	    WebElement element«elementCounter++» = driver.findElement(
+	    «IF action.selector.getAttribute == "text"»
+	        By.xpath("//«action.selector.base_selector.compile()»[contains(text(), '«action.selector.value.compile().toString().trim()»')]")
 	    «ELSE»
-	        By.cssSelector("«action.selector.compile().toString().trim()»")
+	        «action.selector.compile().toString().trim()»
 	    «ENDIF»);
-	    element.isDisplayed();
+	    element«elementCounter-1».isDisplayed();
 	'''
 
 	private def compile(GotoAction action) '''
 		driver.get("«action.getUrl()»");
 	'''
 	
-	private def compile(SelectorWith selector) '''
-	    «IF selector.w != null && selector.w.withAttribute.attribute == "text"»
-	        By.xpath("//«selector.base_selector»[text()='«selector.w.value.compile().toString().trim()»']")«selector.and.compile()»
-	    «ELSEIF selector.w != null»
-	        «selector.base_selector»[«selector.w.withAttribute.attribute»=\"«selector.w.value.compile().toString().trim()»\"]«selector.and.compile()»
-	    «ELSE»
-	        «selector.base_selector»«selector.and.compile()»
-	    «ENDIF»
-	'''
+	private def compile(BaseSelector baseSelector)'''
+		«IF baseSelector.getName() == "body"»div«ELSE»«baseSelector.getName()»«ENDIF»'''
 	
-	private def compile(EList<And> lAnd) '''«FOR and: lAnd»[«and.getAndAttribute().getAttribute()»=\"_«and.getValue().compile()»\"]«ENDFOR»'''
+	private def compile(SelectorWith selector) '''
+		By.xpath("(//«IF selector.w !== null && selector.w.withAttribute.attribute == "label"»
+		    input[@id=//label[contains(text(), '«selector.w.value.compile().toString().trim()»')]/@for]
+	    «ELSEIF selector.w !== null && selector.w.withAttribute.attribute == "text"»
+			«selector.base_selector.compile()»[contains(text(), '«selector.w.value.compile().toString().trim()»')]
+	    «ELSEIF selector.w !== null»
+			«selector.base_selector.compile()»[@«selector.w.withAttribute.attribute»=\"«selector.w.value.compile().toString().trim()»\"]
+	    «ELSE»
+	        «selector.base_selector.compile()»
+	    «ENDIF»)
+		«IF selector.isLast()»[last()]«ELSEIF selector.isFirst()»[0]«ENDIF»")«selector.and.compile()»'''
+	
+	private def compile(EList<And> lAnd) '''«FOR and: lAnd»[«and.andAttribute.attribute»=\"_«and.value.compile().toString().trim()»\"]«ENDFOR»'''
 	
 	private def compile(Value value) '''
 	    «IF value.valueString != null»
@@ -131,10 +154,10 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	    «ENDIF»'''
 	
 	private def compile(VariableAction action) '''
-		WebElement _«action.getName()» = driver.findElement(By.cssSelector("«action.getAssignation().getSelector().compile().toString().trim()»"));
-		_«action.getName()» = «IF action.getAssignation().getAttribute() == "text"» _«action.getName()».getText(); «ELSE» _«action.getName()».getAttribute(«action.getAssignation().getAttribute()»); «ENDIF»
+		WebElement _«action.getName()» = driver.findElement(«action.assignation.selector.compile().toString().trim()»);
+		_«action.getName()» = «IF action.getAssignation().getAttribute() == "text"» _«action.getName()».getText(); «ELSE» _«action.name».getAttribute(«action.assignation.attribute»); «ENDIF»
 	'''
 
 	
-	private def compile(SelectorHas selector) '''«selector.getBase_selector()»[«selector.getAttribute()»=\"«selector.getValue()»\"]'''
+	private def compile(SelectorHas selector) '''«selector.base_selector.compile()»[«selector.attribute»=\"«selector.value»\"]'''
 }
