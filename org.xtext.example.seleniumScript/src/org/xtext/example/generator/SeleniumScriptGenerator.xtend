@@ -25,7 +25,7 @@ import org.xtext.example.seleniumScript.VariableAssignation
 public class SeleniumScriptGenerator extends AbstractGenerator {
 
 	@Inject extension IQualifiedNameProvider
-
+	private int elementCounter = 0;
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		for (e : resource.allContents.toIterable.filter(Test)) {
 			fsa.generateFile("Tests/Test" + e.fullyQualifiedName.toString("/") + ".java", e.compile)
@@ -41,6 +41,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		import org.openqa.selenium.WebDriver;
 		import org.openqa.selenium.WebElement;
 		import org.openqa.selenium.chrome.ChromeDriver;
+		import org.openqa.selenium.JavascriptExecutor;
 		
 		public class Test«test.getName()» {
 		    private WebDriver driver;
@@ -51,6 +52,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		
 		    public void runTest() {
 			    try {
+			    	JavascriptExecutor js = (JavascriptExecutor) driver;
 			        «FOR action : test.actions»
 			        	«action.compile()»
 			        «ENDFOR»
@@ -90,21 +92,21 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	'''
 
 	private def compile(ClickAction action) '''
-	    WebElement element = driver.findElement(«IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
+	    WebElement element«elementCounter++» = driver.findElement(«IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
 	        By.xpath("//«action.selector.base_selector»[text()='«action.selector.w.value.compile().toString().trim()»']")
 	    «ELSE»
 	        By.cssSelector("«action.selector.compile().toString().trim()»")
 	    «ENDIF»);
-	    element.click();
+	    js.executeScript("arguments[0].click();", element«elementCounter»);
 	'''
 
 	private def compile(CheckAction action) '''
-	    WebElement element = driver.findElement(«IF action.selector.getAttribute == "text"»
+	    WebElement element«elementCounter++» = driver.findElement(«IF action.selector.getAttribute == "text"»
 	        By.xpath("//«action.selector.base_selector»[text()='«action.selector.value.compile().toString().trim()»']")
 	    «ELSE»
 	        By.cssSelector("«action.selector.compile().toString().trim()»")
 	    «ENDIF»);
-	    element.isDisplayed();
+	    element«elementCounter».isDisplayed();
 	'''
 
 	private def compile(GotoAction action) '''
