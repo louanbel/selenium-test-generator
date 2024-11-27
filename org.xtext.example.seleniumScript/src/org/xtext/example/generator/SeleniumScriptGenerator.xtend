@@ -24,6 +24,7 @@ import org.xtext.example.seleniumScript.WriteAction
 import org.xtext.example.seleniumScript.SelectAction
 import org.xtext.example.seleniumScript.AssertAction
 import org.xtext.example.seleniumScript.CheckAction
+import org.xtext.example.seleniumScript.With
 
 public class SeleniumScriptGenerator extends AbstractGenerator {
 
@@ -54,6 +55,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		import org.openqa.selenium.WebElement;
 		import org.openqa.selenium.chrome.ChromeDriver;
 		import org.openqa.selenium.JavascriptExecutor;
+		import org.openqa.selenium.support.ui.Select;
 		
 		public class Test«test.getName()» {
 		    private WebDriver driver;
@@ -136,11 +138,9 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	'''
 	private def compile(ClickAction action) '''
 	    WebElement element«elementCounter++» = driver.findElement(
-	    «IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
-	        By.xpath("//«action.selector.base_selector.compile()»[contains(text(), '«action.selector.w.value.compile().toString().trim()»')]")
-	    «ELSE»
-	        «action.selector.compile().toString().trim()»
-	    «ENDIF»);
+		    «IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
+			    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(text(), '«action.selector.w.value.compile().toString().trim()»')]")
+		    «ELSE»«action.selector.compile().toString().trim()»«ENDIF»);
 	    js.executeScript("arguments[0].click();", element«elementCounter-1»);
 	'''
 
@@ -149,8 +149,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	    «IF action.selector.getAttribute == "text"»
 	        By.xpath("//«action.selector.base_selector.compile()»[contains(text(), '«action.selector.value.compile().toString().trim()»')]")
 	    «ELSE»
-	        «action.selector.compile().toString().trim()»
-	    «ENDIF»);
+	        «action.selector.compile().toString().trim()»«ENDIF»);
 	    element«elementCounter-1».isDisplayed();
 	'''
 
@@ -161,18 +160,24 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	private def compile(BaseSelector baseSelector)'''
 		«IF baseSelector.getName() == "body"»div«ELSE»«baseSelector.getName()»«ENDIF»'''
 	
-	private def compile(SelectorWith selector) '''
-		By.xpath("(//«IF selector.w !== null && selector.w.withAttribute.attribute == "label"»
-		    input[@id=//label[contains(text(), '«selector.w.value.compile().toString().trim()»')]/@for]
-	    «ELSEIF selector.w !== null && selector.w.withAttribute.attribute == "text"»
-			«selector.base_selector.compile()»[contains(text(), '«selector.w.value.compile().toString().trim()»')]
-	    «ELSEIF selector.w !== null»
-			«selector.base_selector.compile()»[@«selector.w.withAttribute.attribute»=\"«selector.w.value.compile().toString().trim()»\"]
-	    «ELSE»
-	        «selector.base_selector.compile()»
-	    «ENDIF»)
-		«IF selector.isLast()»[last()]«ELSEIF selector.isFirst()»[0]«ENDIF»")«selector.and.compile()»'''
+	private def compile(SelectorWith selector) {
+	    val baseSelector = selector.base_selector.compile().toString().trim
+	    val withCondition = if (selector.w !== null) selector.w.compileCondition().toString().trim else ""
+	    val andConditions = selector.and.compile().toString().trim
+	    val position = if (selector.isLast()) "[last()]" else if (selector.isFirst()) "[1]" else ""
 	
+	    '''By.xpath("(//«baseSelector»«withCondition»«andConditions»)«position»")'''
+	}
+
+	private def compileCondition(With withClause) '''
+	    «IF withClause.withAttribute.attribute == "label"»
+	        [@id=//label[contains(text(), '«withClause.value.compile().toString().trim()»')]/@for]
+	    «ELSEIF withClause.withAttribute.attribute == "text"»
+	        [contains(text(), '«withClause.value.compile().toString().trim()»')]
+	    «ELSE»
+	        [@«withClause.withAttribute.attribute»=\"«withClause.value.compile().toString().trim()»\"]
+	    «ENDIF»
+	'''
 	private def compile(EList<And> lAnd) '''«FOR and: lAnd»[«and.andAttribute.attribute»=\"_«and.value.compile().toString().trim()»\"]«ENDFOR»'''
 	
 	private def compile(Value value) '''
