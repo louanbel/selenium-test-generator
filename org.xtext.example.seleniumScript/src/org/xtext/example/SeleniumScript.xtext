@@ -15,7 +15,7 @@ Test:
 
 
 Action:
-	GotoAction | ClickAction | CheckAction | WriteAction | {Action} UncheckAllAction | SelectAction | VariableAction
+	GotoAction | ClickAction | AssertAction | WriteAction | {Action} UncheckAllAction | CheckAction | SelectAction | VariableAction
 ;
 
 
@@ -27,7 +27,7 @@ ClickAction:
 	'click' selector=SelectorWith
 ;
 
-CheckAction:
+AssertAction:
 	'assert' selector=SelectorHas
 ;
 
@@ -40,13 +40,19 @@ UncheckAllAction:
 	'uncheck_all'
 ;
 
+
+CheckAction:
+    'check' value=STRING
+;
+
 SelectAction:
-	'select' optionSelector=With (and+=And)* 'from' selector=SelectorWith
+    'select' value=STRING 'from' selector=SelectorWith
 ;
 
 
+
 SelectorWith:
-	(first?='first')? (last?='last')? base_selector=STRING (w=With and+=(And)*)?
+	(first?='first')? (last?='last')? base_selector=BaseSelector (w=With and+=(And)*)?
 ;
 
 
@@ -70,7 +76,11 @@ AndAttribute:
 
 
 SelectorHas:
-	base_selector=STRING 'has' attribute=ID value=Value
+	base_selector=BaseSelector 'has' attribute=ID value=Value
+;
+
+BaseSelector:
+	name=STRING
 ;
 
 
