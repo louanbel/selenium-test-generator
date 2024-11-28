@@ -37,7 +37,6 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		elementCounter = 0;
 	}
 	
-	
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		for (e : resource.allContents.toIterable.filter(Test)) {
 			fsa.generateFile("Tests/Test" + e.fullyQualifiedName.toString("/") + ".java", e.compile)
@@ -70,7 +69,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		    public Test«test.getName()»() {
 			    this.driver = new ChromeDriver();
 		    }
-		
+
 		    public boolean runTest() {
 			    try {
 			    	JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -141,6 +140,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
             _checkbox.click();
         }
     }
+    System.out.println("[INFO] Unchecked all checkboxes");
 	'''
 	private def compile(CheckAction action) '''
 	    WebElement label«elementCounter++» = driver.findElement(
@@ -168,18 +168,21 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	        By.xpath("//ul[@class='list']/li[contains(., '«action.value.trim»')]")
 	    );
 	    option«elementCounter-1».click();
+	    System.out.println("[INFO] Selected element: '«action.value.trim»'");
 	'''
 	
 	private def compile(WriteAction writeAction) '''
 		WebElement element«elementCounter++» = driver.findElement(«writeAction.selector.compile().toString().trim()»);
 		element«elementCounter-1».sendKeys("«writeAction.value.compile().toString().trim()»");
+		System.out.println("[INFO] Wrote text: '«writeAction.value.compile().toString().trim()»' in input");
 	'''
 	private def compile(ClickAction action) '''
 	    WebElement element«elementCounter++» = driver.findElement(
 		    «IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
-			    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(., '«action.selector.w.value.compile().toString().trim()»')]")
+		    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(., '«action.selector.w.value.compile().toString().trim()»')]")
 		    «ELSE»«action.selector.compile().toString().trim()»«ENDIF»);
 	    js.executeScript("arguments[0].click();", element«elementCounter-1»);
+	    System.out.println("[INFO] Clicked button");
 	'''
 
 	private def compile(AssertAction action) '''
@@ -191,6 +194,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	                By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(@href, '" + relativePath + "')]")
 	            ));
 	            element«elementCounter-1».isDisplayed();
+	            System.out.println("[INFO] Assert is true");
 	        } catch (Exception e) {
 	            throw new RuntimeException("Error processing URI for href: «action.selector.value.compile().toString().trim()»", e);
 	        }
@@ -201,12 +205,14 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		    «ELSE»
 		    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(@«action.selector.attribute», '«action.selector.value.compile().toString().trim()»')]")
 		    «ENDIF»);
-		    element«elementCounter-1».isDisplayed();
+	    element«elementCounter-1».isDisplayed();
+	    System.out.println("[INFO] Assert is true");
 	    «ENDIF»
 	'''
 
 	private def compile(GotoAction action) '''
 		driver.get("«action.getUrl()»");
+		System.out.println("[INFO] Went to URL: «action.getUrl()»");
 	'''
 
 	private def compile(BaseSelector baseSelector)'''
@@ -230,6 +236,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	        [@«withClause.withAttribute.attribute»=\"«withClause.value.compile().toString().trim()»\"]
 	    «ENDIF»
 	'''
+
 	private def compile(EList<And> lAnd) '''«FOR and: lAnd»[«and.andAttribute.attribute»=\"_«and.value.compile().toString().trim()»\"]«ENDFOR»'''
 	
 	private def compile(Value value) '''
@@ -252,6 +259,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	«ELSE»
 		element«elementCounter-1».getAttribute("«action.assignation.attribute»");
 	«ENDIF»
+	System.out.println("[INFO] Created variable: _«action.getName()» with value: " + _«action.getName()»);
 	'''	
 	
 	private def compile(SelectorHas selector) '''«selector.base_selector.compile()»[«selector.attribute»=\"«selector.value»\"]'''
