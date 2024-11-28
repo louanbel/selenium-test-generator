@@ -53,8 +53,7 @@ hs_err_pid*
 test-output/
 surefire-reports/
 
-# Git
-!.gitignore**/src-gen/
+**/src-gen/
 .DS_STORE
 **/generated/
 .classpath
