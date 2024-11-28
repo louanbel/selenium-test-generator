@@ -15,7 +15,7 @@ Test:
 
 
 Action:
-	GotoAction | ClickAction | CheckAction | WriteAction | {Action} UncheckAllAction | SelectAction | VariableAction
+	GotoAction | ClickAction | AssertAction | WriteAction | {Action} UncheckAllAction | CheckAction | SelectAction | VariableAction
 ;
 
 
@@ -27,7 +27,7 @@ ClickAction:
 	'click' selector=SelectorWith
 ;
 
-CheckAction:
+AssertAction:
 	'assert' selector=SelectorHas
 ;
 
@@ -40,9 +40,15 @@ UncheckAllAction:
 	'uncheck_all'
 ;
 
-SelectAction:
-	'select' optionSelector=With (and+=And)* 'from' selector=SelectorWith
+
+CheckAction:
+    'check' value=STRING
 ;
+
+SelectAction:
+    'select' value=STRING 'of' selector=SelectorWith
+;
+
 
 
 SelectorWith:
@@ -83,7 +89,7 @@ VariableAction:
 ;
 
 VariableAssignation:
-	'as' attribute=ID 'from' selector=SelectorWith
+    'as' attribute=ID 'of' selector=SelectorWith ('at' position=INT)?
 ;
 
 

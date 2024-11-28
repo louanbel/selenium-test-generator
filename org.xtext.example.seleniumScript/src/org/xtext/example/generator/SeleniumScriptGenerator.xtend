@@ -50,13 +50,19 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	private def compile(Test test) '''
 		package com.cafonctionne.mavenproject;
 
+		import java.time.Duration;
+		import java.util.List;
+		import java.net.URI;
+
 		import org.openqa.selenium.By;
 		import org.openqa.selenium.WebDriver;
 		import org.openqa.selenium.WebElement;
 		import org.openqa.selenium.chrome.ChromeDriver;
 		import org.openqa.selenium.JavascriptExecutor;
 		import org.openqa.selenium.support.ui.Select;
-		
+		import org.openqa.selenium.support.ui.WebDriverWait;
+		import org.openqa.selenium.support.ui.ExpectedConditions;
+
 		public class Test«test.getName()» {
 		    private WebDriver driver;
 		
@@ -112,7 +118,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	
 	private def compile(CheckAction action) '''
 	    WebElement label«elementCounter++» = driver.findElement(
-	        By.xpath("//label[contains(text(), '«action.value»')]")
+	        By.xpath("//label[contains(., '«action.value»')]")
 	    );
 
 	    String inputId«elementCounter++» = label«elementCounter-2».getAttribute("for");
@@ -127,9 +133,15 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	'''	
 
 	private def compile(SelectAction action) '''
-	    WebElement element«elementCounter++» = driver.findElement(«action.selector.compile().toString().trim()»);
-	    Select dropdown«elementCounter-1» = new Select(element«elementCounter-1»);
-	    dropdown«elementCounter-1».selectByVisibleText("«action.value»");
+	    WebElement select«elementCounter++» = driver.findElement(«action.selector.compile().toString().trim()»);
+
+	    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", select«elementCounter-1»);
+	    select«elementCounter-1».click();
+
+	    WebElement option«elementCounter++» = driver.findElement(
+	        By.xpath("//ul[@class='list']/li[contains(., '«action.value.trim»')]")
+	    );
+	    option«elementCounter-1».click();
 	'''
 	
 	private def compile(WriteAction writeAction) '''
@@ -139,18 +151,32 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	private def compile(ClickAction action) '''
 	    WebElement element«elementCounter++» = driver.findElement(
 		    «IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
-			    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(text(), '«action.selector.w.value.compile().toString().trim()»')]")
+			    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(., '«action.selector.w.value.compile().toString().trim()»')]")
 		    «ELSE»«action.selector.compile().toString().trim()»«ENDIF»);
 	    js.executeScript("arguments[0].click();", element«elementCounter-1»);
 	'''
 
 	private def compile(AssertAction action) '''
+	    «IF action.selector.attribute == "href"»
+	        try {
+	            String relativePath = new URI("«action.selector.value.compile().toString().trim()»").getPath();
+	            WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+	            WebElement element«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.visibilityOfElementLocated(
+	                By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(@href, '" + relativePath + "')]")
+	            ));
+	            element«elementCounter-1».isDisplayed();
+	        } catch (Exception e) {
+	            throw new RuntimeException("Error processing URI for href: «action.selector.value.compile().toString().trim()»", e);
+	        }
+		«ELSE»
 	    WebElement element«elementCounter++» = driver.findElement(
-	    «IF action.selector.getAttribute == "text"»
-	        By.xpath("//«action.selector.base_selector.compile()»[contains(text(), '«action.selector.value.compile().toString().trim()»')]")
-	    «ELSE»
-	        «action.selector.compile().toString().trim()»«ENDIF»);
-	    element«elementCounter-1».isDisplayed();
+		    «IF action.selector.attribute == "text"»
+		    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(., '«action.selector.value.compile().toString().trim()»')]")
+		    «ELSE»
+		    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(@«action.selector.attribute», '«action.selector.value.compile().toString().trim()»')]")
+		    «ENDIF»);
+		    element«elementCounter-1».isDisplayed();
+	    «ENDIF»
 	'''
 
 	private def compile(GotoAction action) '''
@@ -171,9 +197,9 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 
 	private def compileCondition(With withClause) '''
 	    «IF withClause.withAttribute.attribute == "label"»
-	        [@id=//label[contains(text(), '«withClause.value.compile().toString().trim()»')]/@for]
+	        [@id=//label[contains(., '«withClause.value.compile().toString().trim()»')]/@for]
 	    «ELSEIF withClause.withAttribute.attribute == "text"»
-	        [contains(text(), '«withClause.value.compile().toString().trim()»')]
+	        [contains(., '«withClause.value.compile().toString().trim()»')]
 	    «ELSE»
 	        [@«withClause.withAttribute.attribute»=\"«withClause.value.compile().toString().trim()»\"]
 	    «ENDIF»
@@ -188,10 +214,19 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		«ENDIF»'''
 	
 	private def compile(VariableAction action) '''
-		WebElement _«action.getName()» = driver.findElement(«action.assignation.selector.compile().toString().trim()»);
-		_«action.getName()» = «IF action.getAssignation().getAttribute() == "text"» _«action.getName()».getText(); «ELSE» _«action.name».getAttribute(«action.assignation.attribute»); «ENDIF»
-	'''
-
+	WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+	List<WebElement> elements«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
+	«action.assignation.selector.compile().toString().trim()»
+	));
+	
+	WebElement element«elementCounter++» = elements«elementCounter-2».get(«action.assignation.position»);
+	
+	String _«action.getName()» = «IF action.assignation.attribute == "text"»
+		element«elementCounter-1».getText();
+	«ELSE»
+		element«elementCounter-1».getAttribute("«action.assignation.attribute»");
+	«ENDIF»
+	'''	
 	
 	private def compile(SelectorHas selector) '''«selector.base_selector.compile()»[«selector.attribute»=\"«selector.value»\"]'''
 }

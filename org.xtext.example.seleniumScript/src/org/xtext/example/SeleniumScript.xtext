@@ -46,7 +46,7 @@ CheckAction:
 ;
 
 SelectAction:
-    'select' value=STRING 'from' selector=SelectorWith
+    'select' value=STRING 'of' selector=SelectorWith
 ;
 
 
@@ -89,7 +89,7 @@ VariableAction:
 ;
 
 VariableAssignation:
-	'as' attribute=ID 'from' selector=SelectorWith
+    'as' attribute=ID 'of' selector=SelectorWith ('at' position=INT)?
 ;
 
 
