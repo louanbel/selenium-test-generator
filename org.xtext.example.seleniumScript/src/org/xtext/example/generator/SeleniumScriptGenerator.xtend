@@ -49,7 +49,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 
 	
 	private def compile(Test test) '''
-		package com.cafonctionne.mavenproject;
+		package Tests;
 
 		import java.time.Duration;
 		import java.util.List;
@@ -71,12 +71,17 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 			    this.driver = new ChromeDriver();
 		    }
 		
-		    public void runTest() {
+		    public boolean runTest() {
 			    try {
 			    	JavascriptExecutor js = (JavascriptExecutor) driver;
 			        «FOR action : test.actions»
 			        	«action.compile()»
 			        «ENDFOR»
+			        System.out.println("Test «test.getName()» PASSED");
+			        return true;
+			    } catch (Exception e) {
+			        System.err.println("Test «test.getName()» FAILED: " + e.getMessage());
+			        return false;
 			    } finally {
 			        driver.quit();
 			    }
@@ -85,17 +90,25 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	'''
 
 	private def compileMainClass(Iterable<Test> tests) '''
-		package com.cafonctionne.mavenproject;
+		package Tests;
 
 		public class AllTestsRunner {
 		
 		    public static void main(String[] args) {
+				int passed = 0;
+				int failed = 0;
+
 			    «FOR test : tests»
 			    System.out.println("Running test: «test.getName()»");
-			    new Test«test.getName()»().runTest();
-				«ENDFOR»
+			    if (new Test«test.getName()»().runTest()) {
+			    	passed++;
+			    } else {
+			    	failed++;
+			    }
+			    «ENDFOR»
 			
 				System.out.println("All tests completed.");
+				System.out.println("Summary: " + passed + " test(s) passed, " + failed + " test(s) failed.");
 			}
 		}
 	'''
