@@ -23,6 +23,7 @@ import org.xtext.example.seleniumScript.BaseSelector
 import org.xtext.example.seleniumScript.WriteAction
 import org.xtext.example.seleniumScript.SelectAction
 import org.xtext.example.seleniumScript.AssertAction
+import org.xtext.example.seleniumScript.UncheckAllAction
 import org.xtext.example.seleniumScript.CheckAction
 import org.xtext.example.seleniumScript.With
 
@@ -104,6 +105,8 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 			«(action as ClickAction).compile()»
 		«ELSEIF action instanceof AssertAction»
 			«(action as AssertAction).compile()»
+		«ELSEIF action instanceof UncheckAllAction»
+			«(action as UncheckAllAction).compile()»
 		«ELSEIF action instanceof GotoAction»
 			«(action as GotoAction).compile()»
 		«ELSEIF action instanceof VariableAction»
@@ -115,7 +118,17 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 		«ELSEIF action instanceof CheckAction»
 			«(action as CheckAction).compile()»
 		«ENDIF»'''
-	
+
+	private def compile(UncheckAllAction action) '''
+    List<WebElement> checkboxes«elementCounter++» = driver.findElements(By.xpath("//input[@type='checkbox' and @checked]"));
+
+    for (WebElement _checkbox: checkboxes«elementCounter-1») {
+        if (_checkbox.isSelected()) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", _checkbox);
+            _checkbox.click();
+        }
+    }
+	'''
 	private def compile(CheckAction action) '''
 	    WebElement label«elementCounter++» = driver.findElement(
 	        By.xpath("//label[contains(., '«action.value»')]")

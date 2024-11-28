@@ -15,7 +15,7 @@ Test:
 
 
 Action:
-	GotoAction | ClickAction | AssertAction | WriteAction | {Action} UncheckAllAction | CheckAction | SelectAction | VariableAction
+	GotoAction | ClickAction | AssertAction | WriteAction | UncheckAllAction | CheckAction | SelectAction | VariableAction
 ;
 
 
@@ -37,7 +37,7 @@ WriteAction:
 
 
 UncheckAllAction:
-	'uncheck_all'
+	{UncheckAllAction} 'uncheck_all'
 ;
 
 
