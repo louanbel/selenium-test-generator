@@ -143,46 +143,52 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
     System.out.println("[INFO] Unchecked all checkboxes");
 	'''
 	private def compile(CheckAction action) '''
-	    WebElement label«elementCounter++» = driver.findElement(
-	        By.xpath("//label[contains(., '«action.value»')]")
-	    );
+		WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+		WebElement label«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(
+			By.xpath("//label[contains(., '«action.value»')]")
+		));
 
-	    String inputId«elementCounter++» = label«elementCounter-2».getAttribute("for");
-	    WebElement checkbox«elementCounter-1» = driver.findElement(
-	        By.id(inputId«elementCounter-1»)
-	    );
-	    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", checkbox«elementCounter-1»);
+		String inputId«elementCounter++» = label«elementCounter-2».getAttribute("for");
+		WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+		WebElement checkbox«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(
+			By.id(inputId«elementCounter-3»)
+		));
+		((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", checkbox«elementCounter-1»);
 
-	    if (!checkbox«elementCounter-1».isSelected()) {
-	        checkbox«elementCounter-1».click();
-	    }
+		if (!checkbox«elementCounter-1».isSelected()) {
+			checkbox«elementCounter-1».click();
+		}
 	'''	
 
 	private def compile(SelectAction action) '''
-	    WebElement select«elementCounter++» = driver.findElement(«action.selector.compile().toString().trim()»);
+		WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+		WebElement select«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(«action.selector.compile().toString().trim()»));
 
-	    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", select«elementCounter-1»);
-	    select«elementCounter-1».click();
+		((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", select«elementCounter-1»);
+		select«elementCounter-1».click();
 
-	    WebElement option«elementCounter++» = driver.findElement(
-	        By.xpath("//ul[@class='list']/li[contains(., '«action.value.trim»')]")
-	    );
-	    option«elementCounter-1».click();
-	    System.out.println("[INFO] Selected element: '«action.value.trim»'");
+		WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+		WebElement option«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(
+			By.xpath("//ul[@class='list']/li[contains(., '«action.value.trim»')]")
+		));
+		option«elementCounter-1».click();
+		System.out.println("[INFO] Selected element: '«action.value.trim»'");
 	'''
 	
 	private def compile(WriteAction writeAction) '''
-		WebElement element«elementCounter++» = driver.findElement(«writeAction.selector.compile().toString().trim()»);
+		WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+		WebElement element«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(«writeAction.selector.compile().toString().trim()»));
 		element«elementCounter-1».sendKeys("«writeAction.value.compile().toString().trim()»");
 		System.out.println("[INFO] Wrote text: '«writeAction.value.compile().toString().trim()»' in input");
 	'''
 	private def compile(ClickAction action) '''
-	    WebElement element«elementCounter++» = driver.findElement(
+		WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+		WebElement element«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(
 		    «IF action.selector.w != null && action.selector.w.withAttribute.attribute == "text"»
 		    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(., '«action.selector.w.value.compile().toString().trim()»')]")
-		    «ELSE»«action.selector.compile().toString().trim()»«ENDIF»);
-	    js.executeScript("arguments[0].click();", element«elementCounter-1»);
-	    System.out.println("[INFO] Clicked button");
+		    «ELSE»«action.selector.compile().toString().trim()»«ENDIF»));
+		js.executeScript("arguments[0].click();", element«elementCounter-1»);
+		System.out.println("[INFO] Clicked button");
 	'''
 
 	private def compile(AssertAction action) '''
@@ -190,7 +196,7 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	        try {
 	            String relativePath = new URI("«action.selector.value.compile().toString().trim()»").getPath();
 	            WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
-	            WebElement element«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.visibilityOfElementLocated(
+	            WebElement element«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(
 	                By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(@href, '" + relativePath + "')]")
 	            ));
 	            element«elementCounter-1».isDisplayed();
@@ -199,12 +205,13 @@ public class SeleniumScriptGenerator extends AbstractGenerator {
 	            throw new RuntimeException("Error processing URI for href: «action.selector.value.compile().toString().trim()»", e);
 	        }
 		«ELSE»
-	    WebElement element«elementCounter++» = driver.findElement(
+	    WebDriverWait wait«elementCounter++» = new WebDriverWait(driver, Duration.ofSeconds(10));
+	    WebElement element«elementCounter++» = wait«elementCounter-2».until(ExpectedConditions.presenceOfElementLocated(
 		    «IF action.selector.attribute == "text"»
 		    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(., '«action.selector.value.compile().toString().trim()»')]")
 		    «ELSE»
 		    By.xpath("//«action.selector.base_selector.compile().toString().trim()»[contains(@«action.selector.attribute», '«action.selector.value.compile().toString().trim()»')]")
-		    «ENDIF»);
+		    «ENDIF»));
 	    element«elementCounter-1».isDisplayed();
 	    System.out.println("[INFO] Assert is true");
 	    «ENDIF»
