@@ -1,9 +1,9 @@
-# Selenium Code Generator
+# Générateur de code Selenium avec XTend et XText
 Extension: `.sscript`
-# Equipe
+## Équipe
 - Mathis Planchet
 - Louan Bélicaud
-# Jeu de test
+## Jeu de test
 Exemple de fichier `tests.sscript`:
 ```
 test test1:
